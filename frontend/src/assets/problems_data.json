@@ -1,0 +1,58 @@
+[
+    {
+      "id": 1,
+      "title": "Two Sum",
+      "acceptance": "57.3%",
+      "difficulty": "Easy",
+      "status": "solved"
+    },
+    {
+      "id": 2,
+      "title": "Add Two Numbers",
+      "acceptance": "48.3%",
+      "difficulty": "Medium",
+      "status": "solved"
+    },
+    {
+      "id": 3,
+      "title": "Longest Substring Without Repeating Characters",
+      "acceptance": "38.8%",
+      "difficulty": "Medium",
+      "status": "solved"
+    },
+    {
+      "id": 4,
+      "title": "Median of Two Sorted Arrays",
+      "acceptance": "46.3%",
+      "difficulty": "Hard",
+      "status": "solved"
+    },
+    {
+      "id": 5,
+      "title": "Longest Palindromic Substring",
+      "acceptance": "37.6%",
+      "difficulty": "Medium",
+      "status": "none"
+    },
+    {
+      "id": 6,
+      "title": "Zigzag Conversion",
+      "acceptance": "53.9%",
+      "difficulty": "Medium",
+      "status": "none"
+    },
+    {
+      "id": 7,
+      "title": "Reverse Integer",
+      "acceptance": "31.7%",
+      "difficulty": "Medium",
+      "status": "none"
+    },
+    {
+      "id": 8,
+      "title": "String to Integer (atoi)",
+      "acceptance": "20.8%",
+      "difficulty": "Medium",
+      "status": "none"
+    }
+  ]
