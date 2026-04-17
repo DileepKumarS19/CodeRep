@@ -100,7 +100,7 @@ export default function NavbarWithAuth() {
     >
       {/* ── LOGO ─────────────────────────────────────────────────── */}
       <div className="text-xl font-extrabold text-white tracking-tight">
-        Leet<span className="text-[#ffa116]">Code</span>
+        Code<span className="text-[#ffa116]">Rep</span>
       </div>
 
       {/* ── NAV LINKS ────────────────────────────────────────────── */}

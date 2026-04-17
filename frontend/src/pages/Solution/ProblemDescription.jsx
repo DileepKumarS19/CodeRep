@@ -1,123 +1,151 @@
-import problem_description from "../../assets/problem_descrition.json";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { 
+  HandThumbUpIcon, 
+  HandThumbDownIcon, 
+  StarIcon, 
+  ChatBubbleBottomCenterTextIcon,
+  TagIcon
+} from "@heroicons/react/24/outline";
 
-function ProblemDescription() {
-  const problem = problem_description[0];
+function ProblemDescription({ problem }) {
 
   const getDifficultyColor = (diff) => {
-    switch (diff) {
-      case "Easy":
-        return "text-[#00b8a3]"; // premium teal
-      case "Medium":
-        return "text-[#ffc01e]"; // yellow
-      case "Hard":
-        return "text-[#ff375f]"; // crimson
+    switch (diff?.toLowerCase()) {
+      case "easy":
+        return { text: "text-[#00b8a3]", bg: "bg-[#00b8a3]/10" };
+      case "medium":
+        return { text: "text-[#ffc01e]", bg: "bg-[#ffc01e]/10" };
+      case "hard":
+        return { text: "text-[#ff375f]", bg: "bg-[#ff375f]/10" };
       default:
-        return "text-gray-400";
+        return { text: "text-gray-400", bg: "bg-gray-400/10" };
     }
   };
 
-  // Basic markdown parser for inline code `code` and bold **bold**
-  const renderText = (text) => {
-    const parts = text.split("`");
-    return parts.map((part, i) => {
-      // Even indices are regular text (or bold), odd indices are inside backticks
-      if (i % 2 === 0) {
-        const boldParts = part.split("**");
-        return boldParts.map((bPart, j) =>
-          j % 2 === 1 ? (
-            <strong key={j} className="text-white font-bold">
-              {bPart}
-            </strong>
-          ) : (
-            bPart
-          )
-        );
-      } else {
-        return (
-          <code
-            key={i}
-            className="px-1.5 py-0.5 bg-[#2a2a2a] text-[#00b8a3] rounded-md text-xs font-mono border border-[#333]"
-          >
-            {part}
-          </code>
-        );
-      }
-    });
-  };
+  if (!problem) {
+    return (
+      <div className="h-full bg-[#262626] p-6 text-white overflow-y-auto w-full">
+        <div className="animate-pulse space-y-5">
+          <div className="h-8 bg-white/5 rounded w-1/3"></div>
+          <div className="flex gap-2">
+            <div className="h-6 bg-white/5 rounded-full w-16"></div>
+            <div className="h-6 bg-white/5 rounded-md w-12"></div>
+            <div className="h-6 bg-white/5 rounded-md w-12"></div>
+          </div>
+          <div className="space-y-3 mt-8">
+            <div className="h-4 bg-white/5 rounded w-full"></div>
+            <div className="h-4 bg-white/5 rounded w-5/6"></div>
+            <div className="h-4 bg-white/5 rounded w-4/6"></div>
+          </div>
+          <div className="h-24 bg-white/5 rounded w-full mt-6"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const diffCls = getDifficultyColor(problem.difficulty);
 
   return (
-    <div className="h-full bg-[#1e1e1e] text-gray-300 overflow-y-auto p-6 md:p-8">
-      {/* Title & Meta */}
-      <h1 className="text-2xl font-bold text-white mb-4">
-        {problem.id}. {problem.title}
-      </h1>
+    <div className="h-full bg-[#262626] text-gray-300 overflow-y-auto px-6 py-5 cs-scrollbar flex flex-col">
+      <style dangerouslySetInnerHTML={{__html: `
+        .prose :where(code):not(:where([class~="not-prose"] *))::before { content: none; }
+        .prose :where(code):not(:where([class~="not-prose"] *))::after { content: none; }
+        
+        /* Custom UI scrollbar matching Leetcode dark mode */
+        .cs-scrollbar::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .cs-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .cs-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #555;
+          border-radius: 20px;
+          border: 2px solid #262626;
+        }
+        .cs-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: #888;
+        }
+      `}} />
+      
+      {/* Header Container */}
+      <div className="mb-6 flex-shrink-0">
+        <h1 className="text-[22px] font-semibold text-gray-100 mb-3 tracking-tight">
+          {problem.title}
+        </h1>
 
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <span
-          className={`text-xs font-bold ${getDifficultyColor(
-            problem.difficulty
-          )} bg-white/5 border border-white/5 px-2.5 py-1 rounded-full`}
-        >
-          {problem.difficulty}
-        </span>
-        {problem.topics.map((topic, idx) => (
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Difficulty */}
           <span
-            key={idx}
-            className="text-xs font-medium text-gray-400 bg-[#252525] border border-[#333] hover:text-gray-200 hover:bg-[#333] transition-colors cursor-pointer px-2.5 py-1 rounded-full"
+            className={`text-xs font-semibold capitalize ${diffCls.text} bg-white/5 px-3 py-1 rounded-full border border-transparent hover:border-white/10 transition-colors cursor-default`}
           >
-            {topic}
+            {problem.difficulty}
           </span>
-        ))}
-      </div>
 
-      {/* Description */}
-      <div className="text-sm md:text-base leading-loose mb-10 whitespace-pre-line text-gray-300">
-        {renderText(problem.description)}
-      </div>
+          {/* Topics Mocking if exists */}
+          {problem.topics && problem.topics.length > 0 && (
+             <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full cursor-pointer hover:bg-white/10 transition-colors">
+               <TagIcon className="w-3.5 h-3.5 text-gray-400" />
+               <span className="text-xs text-gray-400 font-medium">Topics</span>
+             </div>
+          )}
 
-      {/* Examples */}
-      <div className="flex flex-col gap-8 mb-10">
-        {problem.examples.map((ex, index) => (
-          <div key={ex.id}>
-            <p className="font-bold text-white text-sm mb-3">
-              Example {index + 1}:
-            </p>
-            <div className="bg-[#252525] border-l-4 border-[#00b8a3] rounded-r-lg p-4 font-mono text-xs md:text-sm shadow-md overflow-x-auto selection:bg-blue-500/30">
-              <div className="mb-2">
-                <span className="text-gray-500 select-none font-bold">Input: </span>
-                <span className="text-gray-300">{ex.input}</span>
-              </div>
-              <div className="mb-2">
-                <span className="text-gray-500 select-none font-bold">Output: </span>
-                <span className="text-gray-300">{ex.output}</span>
-              </div>
-              {ex.explanation && (
-                <div>
-                  <span className="text-gray-500 select-none font-bold">
-                    Explanation:{" "}
-                  </span>
-                  <span className="text-gray-300">{ex.explanation}</span>
-                </div>
-              )}
-            </div>
+          {/* Action Icons Panel */}
+          <div className="flex items-center gap-1 border-l border-[#444] pl-3 ml-1">
+            <button className="flex items-center justify-center p-1.5 rounded-md text-gray-400 hover:text-green-500 hover:bg-white/10 transition group" title="Like">
+              <HandThumbUpIcon className="w-4 h-4 group-active:scale-90 transition-transform" />
+            </button>
+            <button className="flex items-center justify-center p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-white/10 transition group" title="Dislike">
+              <HandThumbDownIcon className="w-4 h-4 group-active:scale-90 transition-transform" />
+            </button>
+            <button className="flex items-center justify-center p-1.5 rounded-md text-gray-400 hover:text-yellow-400 hover:bg-white/10 transition group" title="Star">
+              <StarIcon className="w-4 h-4 group-active:scale-90 transition-transform" />
+            </button>
+            <button className="flex items-center justify-center p-1.5 rounded-md text-gray-400 hover:text-blue-400 hover:bg-white/10 transition group" title="Discuss">
+              <ChatBubbleBottomCenterTextIcon className="w-4 h-4 group-active:scale-90 transition-transform" />
+            </button>
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* Constraints */}
-      <div className="mb-8">
-        <p className="font-bold text-white text-sm mb-4">Constraints:</p>
-        <ul className="list-none flex flex-col gap-2">
-          {problem.constraints.map((constraint, idx) => (
-            <li key={idx} className="flex items-start gap-2 text-sm text-gray-400">
-              <span className="text-[#333] mt-0.5">•</span>
-              <code className="px-1.5 py-0.5 bg-[#252525] text-gray-300 rounded text-xs md:text-sm font-mono border border-[#333]">
-                {constraint}
-              </code>
-            </li>
-          ))}
-        </ul>
+      {/* Description Content */}
+      <div className="prose prose-invert max-w-none text-gray-300 flex-grow
+        prose-p:text-[15px] prose-p:leading-7 prose-p:tracking-normal
+        prose-headings:font-semibold prose-headings:text-gray-200 prose-headings:mt-8 prose-headings:mb-4
+        prose-h2:text-xl prose-h3:text-lg
+        prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
+        prose-strong:text-gray-100 prose-strong:font-semibold
+        prose-ul:list-disc prose-ul:ml-5 prose-ul:space-y-1.5
+        prose-ol:list-decimal prose-ol:ml-5
+        prose-code:text-[#c9d1d9] prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[13px] prose-code:font-medium
+        prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-white/5 prose-pre:rounded-xl prose-pre:text-[13px] prose-pre:p-4 prose-pre:my-6 prose-pre:shadow-sm
+        prose-blockquote:border-l-4 prose-blockquote:border-[#555] prose-blockquote:bg-white/5 prose-blockquote:pl-4 prose-blockquote:py-1 prose-blockquote:rounded-r-md prose-blockquote:italic
+      ">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {problem.description}
+        </ReactMarkdown>
       </div>
+
+      {/* Topics Expansion Area */}
+      {problem.topics && problem.topics.length > 0 && (
+        <div className="mt-12 pt-6 border-t border-[#333] pb-8 flex-shrink-0">
+          <h3 className="text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+            <TagIcon className="w-4 h-4" /> Related Topics
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {problem.topics.map((topic, index) => (
+              <span
+                key={index}
+                className="text-[13px] bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1.5 rounded-full cursor-pointer transition-colors border border-transparent hover:border-white/10 shadow-sm"
+               >
+                {topic}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,13 +2,13 @@ function NavbarWithoutAuth() {
   return (
     <nav className="flex items-center justify-between px-6 md:px-12 py-3 bg-[#2b2b2b] sticky top-0 z-50">
       <div className="text-xl font-extrabold text-white tracking-tight">
-        Leet<span className="text-[#ffa116]">Code</span>
+        Code<span className="text-[#ffa116]">Rep</span>
       </div>
 
       {/* Nav links — hidden on mobile, flex on md+ */}
 
       {/* Buttons — hidden on mobile, flex on md+ */}
-      <div className="hidden md:flex gap-2">
+      <div className="hidden md:flex gap-2">  
         <ul className="hidden md:flex gap-7 list-none align-items-baseline">
           {["Problems", "Contest", "Discuss"].map((item) => (
             <li key={item}>

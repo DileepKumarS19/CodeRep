@@ -1,6 +1,24 @@
 
-import problems from "../../assets/problems_data.json";
+import { useState, useEffect } from "react";
+import { jsxs } from "react/jsx-runtime";
 function Hero() {
+
+  const [problems, setProblems] = useState([]);
+
+  const fetchProblems = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/problems");
+      const json = await response.json();
+      setProblems(json.data);
+      // setTimeout(() => console.log(problems), 5000);
+      
+    } catch (err) {
+      console.log("Error fetching:", err);
+    }
+  };
+  useEffect(() => {
+    fetchProblems();
+  }, []);
   const getDifficultyClass = (difficulty) => {
     switch (difficulty) {
       case "Easy":
@@ -14,6 +32,7 @@ function Hero() {
     }
   };
 
+
   return (
     <div className="overflow-hidden bg-[#1e1e1e] rounded-xl border border-[#333] shadow-2xl">
       <div className="overflow-x-auto">
@@ -22,49 +41,42 @@ function Hero() {
             <tr className="text-gray-400 text-sm border-b border-[#333] bg-[#252525]">
               <th className="px-6 py-4 font-semibold w-16 text-center">Status</th>
               <th className="px-6 py-4 font-semibold">Title</th>
-              <th className="px-6 py-4 font-semibold">Acceptance</th>
               <th className="px-6 py-4 font-semibold">Difficulty</th>
             </tr>
           </thead>
           <tbody>
-            {problems.map((data, id) => (
+            {problems?.map((p, id) => (
               <tr
                 key={id}
                 className="border-b border-[#333] hover:bg-[#2a2a2a] transition-all duration-200 group cursor-pointer"
               >
                 {/* Status Column */}
                 <td className="px-6 py-4 text-center">
-                  {data.status === "solved" ? (
-                    <span className="text-emerald-500 text-lg">
-                      <i className="fa-solid fa-check"></i>
-                    </span>
-                  ) : (
-                    <span className="inline-block w-4 h-4 rounded-full border border-gray-600 group-hover:border-gray-400 transition-colors"></span>
-                  )}
+
+                  <span className="inline-block w-4 h-4 rounded-full border border-gray-600 group-hover:border-gray-400 transition-colors"></span>
+
                 </td>
 
                 {/* Title Column */}
                 <td className="px-6 py-4">
                   <a
-                    href="#"
+                    href={`/problem/${p.title}`}
                     className="text-gray-200 font-medium group-hover:text-blue-400 transition-colors"
                   >
-                    {id + 1}. {data.title}
+                    {p.title}
                   </a>
                 </td>
 
                 {/* Acceptance Column */}
-                <td className="px-6 py-4 text-gray-400 text-sm font-mono tracking-wide">
-                  {data.acceptance}
-                </td>
+
 
                 {/* Difficulty Column */}
                 <td
                   className={`px-6 py-4 text-sm font-medium ${getDifficultyClass(
-                    data.difficulty
+                    p.difficulty
                   )}`}
                 >
-                  {data.difficulty}
+                  {p.difficulty}
                 </td>
               </tr>
             ))}
@@ -72,6 +84,10 @@ function Hero() {
         </table>
       </div>
     </div>
+  
+    
+    
+
   );
 }
 export default Hero;

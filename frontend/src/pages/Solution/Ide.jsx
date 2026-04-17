@@ -9,18 +9,22 @@ const STARTER_CODE = {
   cpp: `class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // your code here\n    }\n};\n`
 };
 
-function Ide() {
-  const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState(STARTER_CODE.javascript);
+function Ide({problem}) {
+  const [language, setLanguage] = useState("java");
+  const [code, setCode] = useState("");
   
   // Console state
   const [showConsole, setShowConsole] = useState(false);
   const [consoleOutput, setConsoleOutput] = useState("");
 
-  // when language changes, reset the editor to the starter template
+  // when problem or language changes, reset the editor to the starter template
   useEffect(() => {
-    setCode(STARTER_CODE[language]);
-  }, [language]);
+    if (problem?.starterCode?.[language]) {
+      setCode(problem.starterCode[language]);
+    } else {
+      setCode(STARTER_CODE[language] || "");
+    }
+  }, [problem, language]);
 
   const handleRun = () => {
     setConsoleOutput('Compiling code...\nRunning test cases...\n\nStatus: Accepted\nRuntime: 1ms');
