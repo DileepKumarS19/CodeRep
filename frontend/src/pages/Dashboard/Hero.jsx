@@ -1,24 +1,46 @@
-
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { jsxs } from "react/jsx-runtime";
 function Hero() {
 
   const [problems, setProblems] = useState([]);
+  const [solvedSlugs, setSolvedSlugs] = useState([]);
+  const { token, isAuthenticated } = useAuth();
 
   const fetchProblems = async () => {
     try {
-      const response = await fetch("http://localhost:3000/problems");
+      const response = await fetch("http://localhost:3000/api/problems");
       const json = await response.json();
       setProblems(json.data);
-      // setTimeout(() => console.log(problems), 5000);
-      
     } catch (err) {
-      console.log("Error fetching:", err);
+      console.log("Error fetching problems:", err);
     }
   };
+
+  const fetchSolved = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/api/submissions/solved", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const json = await response.json();
+      if (json.data) setSolvedSlugs(json.data);
+    } catch (err) {
+      console.log("Error fetching solved:", err);
+    }
+  };
+
   useEffect(() => {
     fetchProblems();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchSolved();
+    } else {
+      setSolvedSlugs([]);
+    }
+  }, [isAuthenticated, token]);
   const getDifficultyClass = (difficulty) => {
     switch (difficulty) {
       case "Easy":
@@ -52,19 +74,21 @@ function Hero() {
               >
                 {/* Status Column */}
                 <td className="px-6 py-4 text-center">
-
-                  <span className="inline-block w-4 h-4 rounded-full border border-gray-600 group-hover:border-gray-400 transition-colors"></span>
-
+                  {solvedSlugs.includes(p.slug) ? (
+                    <i className="fa-solid fa-check text-[#00b8a3]"></i>
+                  ) : (
+                    <span className="inline-block w-4 h-4 rounded-full border border-gray-600 group-hover:border-gray-400 transition-colors"></span>
+                  )}
                 </td>
 
                 {/* Title Column */}
                 <td className="px-6 py-4">
-                  <a
-                    href={`/problem/${p.title}`}
+                  <Link
+                    to={`/problem/${p.slug}`}
                     className="text-gray-200 font-medium group-hover:text-blue-400 transition-colors"
                   >
                     {p.title}
-                  </a>
+                  </Link>
                 </td>
 
                 {/* Acceptance Column */}

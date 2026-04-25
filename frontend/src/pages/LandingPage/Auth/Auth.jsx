@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     if (location.pathname === "/signup") {
@@ -40,20 +42,31 @@ function Auth() {
     setError("");
 
     try {
-      // Simulate API call wrapper
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
       if (!formData.email.includes("@")) {
         throw new Error("Please enter a valid email address.");
       }
 
-      if (isLogin) {
-        console.log("Signing in with:", formData.email);
-        // await apiSignin(formData);
+      const endpoint = isLogin ? "signin" : "signup";
+      const payload = isLogin 
+        ? { email: formData.email, password: formData.password }
+        : { username: formData.username, email: formData.email, password: formData.password };
+
+      const response = await fetch(`http://localhost:3000/api/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || "Authentication failed");
+      }
+
+      if (data.token) {
+        login(data.token);
       } else {
-        console.log("Signing up with:", formData.username, formData.email);
-        // await apiSignup(formData);
-        // await apiSignin(formData);
+        throw new Error("No token received from server");
       }
 
       navigate("/problems");

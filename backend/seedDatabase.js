@@ -1,11 +1,11 @@
 import dns from 'node:dns/promises';
-dns.setServers(['1.1.1.1', '8.8.8.8']);
-import mongoose from "mongoose";
-import axios from "axios";
-import dotenv from "dotenv";
-import {ProblemModel} from "./db/schema/problemSchema.js"; 
 
-dotenv.config();
+// Forces Node to use public DNS servers that support SRV records
+dns.setServers(['1.1.1.1', '8.8.8.8']);
+
+import mongoose from "mongoose"
+import axios from "axios"
+import { ProblemModel } from "./db/schema/problemSchema.js"
 
 const githubApi = axios.create({
     baseURL: "https://api.github.com/repos/exercism/java/contents/exercises/practice",
@@ -13,94 +13,147 @@ const githubApi = axios.create({
         Authorization: `token ${process.env.GITHUB_TOKEN}`,
         Accept: "application/vnd.github.v3+json",
     },
-});
+})
 
 async function getRawFile(url) {
-    try {
-        const response = await axios.get(url, {
-            headers: { Authorization: `token ${process.env.GITHUB_TOKEN}` }
-        });
-        return response.data;
-    } catch (error) {
-        return null; 
+  try {
+    const response = await axios.get(url, {
+      headers: { Authorization: `token ${process.env.GITHUB_TOKEN}` }
+    })
+    return response.data  // axios already parses JSON automatically
+  } catch {
+    return null
+  }
+}
+
+function stripDisabled(code) {
+    if (!code) return ""
+    return code
+        .split('\n')
+        .filter(line => !line.trim().startsWith('@Disabled'))
+        .filter(line => !line.includes('import org.junit.jupiter.api.Disabled'))
+        .join('\n')
+}
+
+function splitTestSuite(rawCode) {
+    const cleaned = stripDisabled(rawCode)
+    const lines = cleaned.split('\n')
+    const testStartIndices = []
+
+    lines.forEach((line, i) => {
+        if (line.trim() === '@Test') testStartIndices.push(i)
+    })
+
+    if (testStartIndices.length <= 2) {
+        return { run: cleaned, submit: cleaned }
     }
+
+    const cutPoint = testStartIndices[2]
+    const runLines = [...lines.slice(0, cutPoint), '}']
+
+    return {
+        run: runLines.join('\n'),
+        submit: cleaned
+    }
+}
+
+function mapDifficulty(level) {
+    if (!level) return "Medium"
+    if (level <= 3) return "Easy"
+    if (level <= 6) return "Medium"
+    return "Hard"
+}
+
+function toTitleCase(slug) {
+    return slug.split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
 }
 
 async function scrapeExercismData() {
     try {
-        console.log("Connecting to MongoDB...");
-        await mongoose.connect(process.env.MONGO_URL);
-        console.log("Connected to MongoDB cluster!");
+        console.log("Connecting to MongoDB...")
+        await mongoose.connect(process.env.MONGO_URL)
+        console.log("Connected!")
 
-        console.log("Fetching the master list of exercises from GitHub...");
-        const { data: exercises } = await githubApi.get("/");
-        
-        console.log(`Found ${exercises.length} problems! Starting the massive scrape...`);
+        const { data: exercises } = await githubApi.get("/")
+        console.log(`Found ${exercises.length} exercises`)
 
-        // 🔥 MODIFICATION: We are now looping through the FULL array
+        let problemCount = 0
+
         for (const exercise of exercises) {
-            if (exercise.type !== "dir") continue; 
+            if (exercise.type !== "dir") continue
 
-            const slug = exercise.name;
-            console.log(`\n⬇️ Downloading: ${slug}...`);
+            const slug = exercise.name
+            console.log(`\nDownloading: ${slug}...`)
 
-            const baseUrl = `https://raw.githubusercontent.com/exercism/java/main/exercises/practice/${slug}`;
-            
-            // 1. Fetch README
-            const descriptionUrl = `${baseUrl}/.docs/instructions.md`;
-            const descriptionText = await getRawFile(descriptionUrl);
+            const baseUrl = `https://raw.githubusercontent.com/exercism/java/main/exercises/practice/${slug}`
 
-            // 2. Fetch Directory Info to find exact filenames dynamically
-            const mainDirInfo = await githubApi.get(`/${slug}/src/main/java`);
-            const testDirInfo = await githubApi.get(`/${slug}/src/test/java`);
+            // fetch description
+            const description = await getRawFile(`${baseUrl}/.docs/instructions.md`)
 
-            const mainFileName = mainDirInfo.data.find(f => f.name.endsWith(".java"))?.name;
-            const testFileName = testDirInfo.data.find(f => f.name.endsWith("Test.java"))?.name;
+            // fetch meta for difficulty and topics
+            const metaRaw = await getRawFile(`${baseUrl}/.meta/config.json`)
+            const meta = metaRaw
+                ? (typeof metaRaw === 'string' ? JSON.parse(metaRaw) : metaRaw)
+                : {}
 
-            let starterCode = "";
-            let testSuite = "";
+            // fetch file names dynamically
+            const [mainDirInfo, testDirInfo] = await Promise.all([
+                githubApi.get(`/${slug}/src/main/java`).catch(() => ({ data: [] })),
+                githubApi.get(`/${slug}/src/test/java`).catch(() => ({ data: [] }))
+            ])
 
-            // 3. Fetch actual code content
-            if (mainFileName) {
-                starterCode = await getRawFile(`${baseUrl}/src/main/java/${mainFileName}`);
-            }
-            if (testFileName) {
-                testSuite = await getRawFile(`${baseUrl}/src/test/java/${testFileName}`);
-            }
+            const mainFileName = mainDirInfo.data.find(f => f.name.endsWith(".java") && !f.name.endsWith("Test.java"))?.name
+            const testFileName = testDirInfo.data.find(f => f.name.endsWith("Test.java"))?.name
 
-            // 4. Map to your Schema
+            const [starterCode, rawTestSuite] = await Promise.all([
+                mainFileName ? getRawFile(`${baseUrl}/src/main/java/${mainFileName}`) : Promise.resolve(""),
+                testFileName ? getRawFile(`${baseUrl}/src/test/java/${testFileName}`) : Promise.resolve("")
+            ])
+
+            // split into run (2 tests) and submit (all tests)
+            const testSuiteSplit = splitTestSuite(rawTestSuite)
+
+            problemCount++
+
             const problemData = {
-                slug: slug,
-                title: slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-                difficulty: "medium", 
-                description: descriptionText || "Description missing",
+                id: problemCount,
+                slug,
+                title: toTitleCase(slug),
+                difficulty: mapDifficulty(meta.difficulty),
+                topics: meta.practices?.length ? meta.practices : ["General"],
+                description: description || "Description not available",
+                examples: [],   // populate manually or from canonical-data later
                 supportedLanguages: ["java"],
-                testSuite: { java: testSuite },
-                starterCode: { java: starterCode },
-                executionLimits: { timeLimit: 2000, memoryLimit: 256 },
-                topics: ["Java"], 
-            };
+                starterCode: { java: starterCode || "" },
+                testSuite: {
+                    java: {
+                        run: testSuiteSplit.run,
+                        submit: testSuiteSplit.submit
+                    }
+                },
+                executionLimits: { timeLimit: 2000, memoryLimit: 256 }
+            }
 
-            // 5. Save to MongoDB (upsert prevents duplicates if you run it twice)
             await ProblemModel.findOneAndUpdate(
-                { slug: problemData.slug },
+                { slug },
                 { $set: problemData },
                 { upsert: true, new: true }
-            );
-            
-            console.log(`✅ Saved ${slug} to database!`);
+            )
 
-            // ⚠️ CRITICAL: Wait 1 second between problems so GitHub doesn't block us
-            await new Promise(resolve => setTimeout(resolve, 1000)); 
+            console.log(`Saved: ${slug} (${mapDifficulty(meta.difficulty)})`)
+
+            // rate limit — 1 second between requests
+            await new Promise(resolve => setTimeout(resolve, 1000))
         }
 
-        console.log("\n🎉 MASSIVE SEEDING COMPLETE! All problems are in your database.");
-        process.exit(0);
-
+        console.log(`\nDone! ${problemCount} problems seeded.`)
+        process.exit(0)
     } catch (error) {
-        console.error("❌ Error during scraping:", error.message);
-        process.exit(1);
+        console.error("Error:", error.message)
+        process.exit(1)
     }
 }
 
-scrapeExercismData();
+scrapeExercismData()

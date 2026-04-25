@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import { 
   HandThumbUpIcon, 
   HandThumbDownIcon, 
@@ -112,18 +113,26 @@ function ProblemDescription({ problem }) {
 
       {/* Description Content */}
       <div className="prose prose-invert max-w-none text-gray-300 flex-grow
-        prose-p:text-[15px] prose-p:leading-7 prose-p:tracking-normal
-        prose-headings:font-semibold prose-headings:text-gray-200 prose-headings:mt-8 prose-headings:mb-4
-        prose-h2:text-xl prose-h3:text-lg
+        prose-p:text-[15px] prose-p:leading-relaxed prose-p:tracking-normal prose-p:mb-5
+        prose-headings:font-semibold prose-headings:text-gray-100 prose-headings:mt-8 prose-headings:mb-5
+        prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base prose-h5:text-sm prose-h6:text-xs
         prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
         prose-strong:text-gray-100 prose-strong:font-semibold
-        prose-ul:list-disc prose-ul:ml-5 prose-ul:space-y-1.5
-        prose-ol:list-decimal prose-ol:ml-5
+        prose-ul:list-disc prose-ul:ml-6 prose-ul:space-y-2 prose-ul:mb-5
+        prose-ol:list-decimal prose-ol:ml-6 prose-ol:space-y-2 prose-ol:mb-5
+        prose-li:text-[15px] prose-li:leading-relaxed prose-li:pl-2
         prose-code:text-[#c9d1d9] prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[13px] prose-code:font-medium
         prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-white/5 prose-pre:rounded-xl prose-pre:text-[13px] prose-pre:p-4 prose-pre:my-6 prose-pre:shadow-sm
-        prose-blockquote:border-l-4 prose-blockquote:border-[#555] prose-blockquote:bg-white/5 prose-blockquote:pl-4 prose-blockquote:py-1 prose-blockquote:rounded-r-md prose-blockquote:italic
+        prose-blockquote:border-l-4 prose-blockquote:border-[#555] prose-blockquote:bg-white/5 prose-blockquote:pl-4 prose-blockquote:py-2 prose-blockquote:rounded-r-md prose-blockquote:italic prose-blockquote:mb-5
+        prose-table:w-full prose-table:text-left prose-table:border-collapse prose-table:mb-5
+        prose-th:border prose-th:border-[#444] prose-th:px-4 prose-th:py-2 prose-th:bg-white/5 prose-th:font-semibold prose-th:text-gray-200
+        prose-td:border prose-td:border-[#444] prose-td:px-4 prose-td:py-2
+        prose-hr:border-[#444] prose-hr:my-8
       ">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown 
+            remarkPlugins={[remarkGfm]} 
+            rehypePlugins={[rehypeRaw]}
+        >
           {problem.description}
         </ReactMarkdown>
       </div>

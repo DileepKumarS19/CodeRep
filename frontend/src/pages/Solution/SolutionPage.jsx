@@ -7,20 +7,21 @@ import { useState, useEffect } from "react";
 
 function SolutionPage() {
   const [problem, setProblem] = useState(null);
-  const name = useParams();
+  const slug = useParams();
+  console.log(slug);    
 
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/problem/${name.name}`);
-        const data = await response.json();
+        const response = await fetch(`http://localhost:3000/api/problem/${slug.name}`);
+        const data = await response.json(); 
         setProblem(data.data);
       } catch (err) {
         console.error("Failed to fetch problem:", err);
       }
     };
     fetchProblem();
-  }, [name.name]);
+  }, [slug.name]);
 
   return (
     <div className="h-screen w-full bg-[#0a0a0a] text-gray-300 font-sans selection:bg-blue-500/30 overflow-hidden flex flex-col">

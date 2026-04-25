@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function NavbarWithoutAuth() {
   return (
     <nav className="flex items-center justify-between px-6 md:px-12 py-3 bg-[#2b2b2b] sticky top-0 z-50">
@@ -21,12 +23,12 @@ function NavbarWithoutAuth() {
             </li>
           ))}
         </ul>
-        <button className="ml-5 border border-gray-600 text-gray-300 hover:border-[#ffa116] hover:text-[#ffa116] px-4 py-1.5 rounded text-sm font-semibold transition-all cursor-pointer">
+        <Link to="/signin" className="ml-5 border border-gray-600 text-gray-300 hover:border-[#ffa116] hover:text-[#ffa116] px-4 py-1.5 rounded text-sm font-semibold transition-all cursor-pointer">
           Sign In
-        </button>
-        <button className="bg-[#ffa116] hover:bg-[#e6911a] text-white px-4 py-1.5 rounded text-sm font-bold transition-all cursor-pointer">
+        </Link>
+        <Link to="/signup" className="bg-[#ffa116] hover:bg-[#e6911a] text-white px-4 py-1.5 rounded text-sm font-bold transition-all cursor-pointer">
           Register
-        </button>
+        </Link>
       </div>
 
       {/* Hamburger — visible only on mobile (md:hidden) */}

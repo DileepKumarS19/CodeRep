@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../../context/AuthContext";
 
-// ... (Keep your Icon components: ChevronDown, BellIcon, etc.)
 
 export default function NavbarWithAuth() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const navRef = useRef(null); // Reference to the navbar to detect outside clicks
+  const { logout } = useAuth();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -141,7 +142,14 @@ export default function NavbarWithAuth() {
       </div>
 
       {/* ── RIGHT SIDE ───────────────────────────────────────────── */}
-      {/* ... (Keep your Search, Bell, Fire, Avatar, and Premium buttons) */}
+      <div className="flex items-center gap-4 ml-auto">
+        <button 
+          onClick={logout}
+          className="text-gray-400 hover:text-white text-sm font-semibold transition-colors border border-gray-600 px-4 py-1.5 rounded hover:border-[#ffa116] hover:text-[#ffa116]"
+        >
+          Logout
+        </button>
+      </div>
 
     </nav>
   );
