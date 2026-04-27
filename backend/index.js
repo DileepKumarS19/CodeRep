@@ -3,6 +3,7 @@ import dns from 'node:dns/promises';
 // Forces Node to use public DNS servers that support SRV records
 dns.setServers(['1.1.1.1', '8.8.8.8']);
 import express from "express";
+import { Server } from "socket.io";
 import cors from "cors";
 import mongoose from "mongoose";
 import { SigninSchema, SignupSchema } from './db/zod/zodValidation';
@@ -15,11 +16,48 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from "fs/promises";
 import { exec } from "child_process";
 import path from "path"; 
+import { createServer } from 'node:http';
+const { Queue, QueueEvents } = require("bullmq");
+const IORedis = require("ioredis");
+
+// Connect to Redis and define the Queue
+const connection = new IORedis({ maxRetriesPerRequest: null });
+const executionQueue = new Queue("code-execution-queue", { connection });
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+
+const httpServer = createServer(app);
+
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: ["http://localhost:5173"],
+    methods: ["GET", "POST"]
+  }
+});
+
+const queueEvents = new QueueEvents("code-execution-queue", { connection });
+
+queueEvents.on("completed", ({ jobId, returnvalue }) => {
+    console.log(`Broadcasting Job #${jobId} to frontend!`);
+    // We use a unique event name like "jobResult-5" so React knows it's their specific code
+    io.emit(`jobResult-${jobId}`, returnvalue);
+});
+
+queueEvents.on("failed", ({ jobId, failedReason }) => {
+    console.log(`Broadcasting Job #${jobId} FAILURE to frontend!`);
+    io.emit(`jobResult-${jobId}`, { 
+        success: false, 
+        status: "Server Error", 
+        rawOutput: failedReason 
+    });
+});
+
+
 
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
@@ -38,9 +76,11 @@ async function startServer() {
     try {
         await mongoose.connect(process.env.MONGO_URL);
         console.log("MongoDB connected");
-
-        app.listen(3000, () => {
-            console.log("Server is running on port 3000");
+        const PORT = process.env.PORT || 3000;
+        
+        // CHANGE app.listen to httpServer.listen
+        httpServer.listen(PORT, () => {
+            console.log(`Server & WebSockets are running on port ${PORT}`);
         })
     } catch (err) {
         console.log(err);
@@ -56,7 +96,7 @@ app.post("/api/signup", async (req, res) => {
     const { success, data } = SignupSchema.safeParse(req.body);
 
     if (!success) {
-        res.status(403).json({ message: "invalid username or password" });
+        return res.status(403).json({ message: "invalid username or password" });
     }
     try {
         const hashedPassword = await bcrypt.hash(data.password, parseInt(process.env.SALT_ROUNDS));
@@ -136,33 +176,63 @@ app.post("/api/signin", async (req, res) => {
 
 app.get("/api/problems", async (req, res) => {
     try {
-        const problems = await ProblemModel.find();
-        // console.log(problems);
-        const problem = problems.map((p) => {
-            return {
-                title: p.title,
-                slug: p.slug,
-                difficulty: p.difficulty,
-            }
+        // 1. Check Redis FIRST 
+        const cachedProblems = await connection.get("cache:all_problems");
+        
+        if (cachedProblems) {
+            console.log("⚡ Cache HIT for problems list!");
+            // Redis stores everything as strings, so we parse it back to JSON
+            return res.status(200).json({ data: JSON.parse(cachedProblems) });
+        }
 
-        })
-        res.status(200).json({ data: problem });
+        console.log("🐢 Cache MISS for problems list. Hitting MongoDB...");
+
+        // 2. If not in Redis, do the expensive MongoDB query
+        const problems = await ProblemModel.find();
+        const problemData = problems.map((p) => ({
+            title: p.title,
+            slug: p.slug,
+            difficulty: p.difficulty,
+        }));
+
+        // 3. Save the result into Redis so the next user gets the fast version!
+        // .setex means "Set with Expiration". We cache it for 3600 seconds (1 hour).
+        await connection.setex("cache:all_problems", 3600, JSON.stringify(problemData));
+
+        res.status(200).json({ data: problemData });
 
     } catch (err) {
         console.log(err);
-        res.status(500).json({
-            message: "Internal Error"
-        })
+        res.status(500).json({ message: "Internal Error" });
     }
-})
+});
 
 app.get("/api/submissions/solved", authenticateToken, async (req, res) => {
     try {
+        // 1. Create a unique cache key for THIS specific user
+        const cacheKey = `cache:solved:${req.user.id}`;
+        
+        // 2. Check Redis
+        const cachedSolved = await connection.get(cacheKey);
+        
+        if (cachedSolved) {
+            console.log(`⚡ Cache HIT for user ${req.user.id}'s solved list!`);
+            return res.json({ data: JSON.parse(cachedSolved) });
+        }
+
+        console.log(`🐢 Cache MISS for user ${req.user.id}'s solved list. Hitting MongoDB...`);
+
+        // 3. Do the expensive DB Query
         const submissions = await SubmissionModel.find({ 
             userId: req.user.id, 
             status: "Accepted" 
         }).select('problemSlug -_id');
+        
         const solvedSlugs = [...new Set(submissions.map(s => s.problemSlug))];
+        
+        // 4. Save to Redis (Cache it for 24 hours - 86400 seconds)
+        await connection.setex(cacheKey, 86400, JSON.stringify(solvedSlugs));
+
         res.json({ data: solvedSlugs });
     } catch (err) {
         console.log(err);
@@ -199,89 +269,24 @@ app.get("/api/problem/:name", async (req, res) => {
     }
 })
 
+// 1. Add authenticateToken middleware here!
 app.post("/api/execute", authenticateToken, async (req, res) => {
     const { slug, code, action } = req.body;
+    const userId = req.user.id; // 2. Extract the user ID from the JWT
 
-    // 1. Generate unique folder for this run
-    const runId = uuidv4();
-    // The .replace(/\\/g, '/') converts all Windows backslashes into forward slashes!
-    const tempDir = path.resolve(`./temp/${runId}`);
     try {
-        const problem = await ProblemModel.findOne({ slug });
-        if (!problem) return res.status(404).json({ error: "Problem not found" });
+        // 3. Tape the userId to the job data!
+        const job = await executionQueue.add("execute-job", { slug, code, action, userId });
 
-        const testCode = action === "run" ? problem.testSuite.java.run : problem.testSuite.java.submit;
-
-        const classNameMatch = code.match(/class\s+([A-Za-z0-9_]+)\s*\{/);
-        if (!classNameMatch) {
-            return res.status(400).json({ error: "Could not find a valid Java class name." });
-        }
-
-        const className = classNameMatch[1];
-        const testClassName = `${className}Test`;
-
-        await fs.mkdir(tempDir, { recursive: true });
-        await fs.writeFile(path.join(tempDir, `${className}.java`), code);
-        await fs.writeFile(path.join(tempDir, `${testClassName}.java`), testCode);
-
-        // Make sure the classpath (-cp) includes BOTH .jar files!
-        // Notice we replaced "java -jar /opt/junit.jar" with "java -cp /opt/junit.jar:/opt/assertj.jar:. org.junit.platform.console.ConsoleLauncher"
-        const dockerCmd = `docker run --rm --network none --memory 512m --cpus 0.5 -v "${tempDir}":/app coderep-java sh -c "javac -cp /opt/junit.jar:/opt/assertj.jar *.java && java -cp /opt/junit.jar:/opt/assertj.jar:. org.junit.platform.console.ConsoleLauncher --disable-banner --disable-ansi-colors --select-class ${testClassName}"`;
-        exec(dockerCmd, { timeout: 20000 }, async (error, stdout, stderr) => {
-
-            await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
-
-            // UPDATED ERROR HANDLER: Spit out EVERYTHING so we can debug easily!
-            if (error && !stdout.includes("tests found")) {
-                if (action === "submit") {
-                    await SubmissionModel.create({
-                        userId: req.user.id,
-                        problemSlug: slug,
-                        language: "java",
-                        code: code,
-                        status: "Compile/Docker Error"
-                    });
-                }
-                return res.json({
-                    success: false,
-                    status: "Compile/Docker Error",
-                    details: {
-                        nodeError: error.message,
-                        javaStdErr: stderr,
-                        javaStdOut: stdout
-                    }
-                });
-            }
-
-            // The Parser
-            const total = parseInt(stdout.match(/\[\s+(\d+)\s+tests found\s+\]/)?.[1] || "0");
-            const passed = parseInt(stdout.match(/\[\s+(\d+)\s+tests successful\s+\]/)?.[1] || "0");
-            const failed = parseInt(stdout.match(/\[\s+(\d+)\s+tests failed\s+\]/)?.[1] || "0");
-
-            const isAccepted = failed === 0 && total > 0;
-            const status = isAccepted ? "Accepted" : "Failed";
-
-            if (action === "submit") {
-                await SubmissionModel.create({
-                    userId: req.user.id,
-                    problemSlug: slug,
-                    language: "java",
-                    code: code,
-                    status: status
-                });
-            }
-
-            res.json({
-                success: isAccepted,
-                status: status,
-                results: { total, passed, failed },
-                rawOutput: stdout
-            });
+        return res.status(202).json({ 
+            success: true, 
+            status: "Queued", 
+            jobId: job.id,
+            message: "Your code is waiting in line to be executed."
         });
 
-    } catch (err) {
-        await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
-        console.error(err);
-        res.status(500).json({ error: "Internal Server Error" });
+    } catch (error) {
+        console.error("Queue Error:", error);
+        return res.status(500).json({ error: "Failed to queue job" });
     }
 });

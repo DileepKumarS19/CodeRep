@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { jsxs } from "react/jsx-runtime";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 function Hero() {
 
   const [problems, setProblems] = useState([]);
@@ -10,7 +13,7 @@ function Hero() {
 
   const fetchProblems = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/problems");
+      const response = await fetch(`${API_URL}/api/problems`);
       const json = await response.json();
       setProblems(json.data);
     } catch (err) {
@@ -20,7 +23,7 @@ function Hero() {
 
   const fetchSolved = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/submissions/solved", {
+      const response = await fetch(`${API_URL}/api/submissions/solved`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const json = await response.json();

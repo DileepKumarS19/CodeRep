@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const location = useLocation();
@@ -51,7 +53,7 @@ function Auth() {
         ? { email: formData.email, password: formData.password }
         : { username: formData.username, email: formData.email, password: formData.password };
 
-      const response = await fetch(`http://localhost:3000/api/${endpoint}`, {
+      const response = await fetch(`${API_URL}/api/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

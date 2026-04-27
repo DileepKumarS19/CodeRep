@@ -4,6 +4,12 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
+import { io } from "socket.io-client"; 
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+const socket = io(API_URL);
+
 const stripAnsi = (str) => {
   if (!str) return '';
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -73,11 +79,13 @@ function Ide({problem}) {
     localStorage.setItem(`code_${slug}_${language}`, value);
   };
 
-  const executeCode = async (action) => {
+ const executeCode = async (action) => {
     setExecutionResult({ status: 'running', action });
     setShowConsole(true);
+    
     try {
-      const response = await fetch("http://localhost:3000/api/execute", {
+      // 1. Send the code to the Queue
+      const response = await fetch(`${API_URL}/api/execute`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -85,11 +93,26 @@ function Ide({problem}) {
         },
         body: JSON.stringify({ slug, code, action }),
       });
+      
       const data = await response.json();
-      setExecutionResult({ status: 'done', data });
+
+      // 2. If successfully queued, wait for the socket broadcast!
+      if (response.status === 202 && data.jobId) {
+        
+        // socket.once means it will listen for this exact event ONE time, then turn off
+        socket.once(`jobResult-${data.jobId}`, (result) => {
+          // When the Worker finishes, it triggers this callback!
+          setExecutionResult({ status: 'done', data: result });
+        });
+
+      } else {
+        // If the backend threw a standard error (like 500 or 401)
+        setExecutionResult({ status: 'error', error: data.error || "Failed to queue job." });
+      }
+
     } catch (err) {
-      console.error(err);
-      setExecutionResult({ status: 'error', error: err.message });
+      console.error("Execution Request Failed:", err);
+      setExecutionResult({ status: 'error', error: "Could not connect to the execution server." });
     }
   };
 

@@ -5,6 +5,8 @@ import NavbarWithAuth from "../Navbar/NavbarWithAuth.jsx";
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 function SolutionPage() {
   const [problem, setProblem] = useState(null);
   const slug = useParams();
@@ -13,7 +15,7 @@ function SolutionPage() {
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/problem/${slug.name}`);
+        const response = await fetch(`${API_URL}/api/problem/${slug.name}`);
         const data = await response.json(); 
         setProblem(data.data);
       } catch (err) {

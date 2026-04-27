@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
-
+import { Link } from "react-router-dom";
 
 export default function NavbarWithAuth() {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -76,10 +76,10 @@ export default function NavbarWithAuth() {
   }
   
   const NAV_LINKS = [
-    { label: "Explore",   active: false, dropdown: null },
-    { label: "Problems",  active: true,  dropdown: null },
-    { label: "Contest",   active: false, dropdown: null },
-    { label: "Discuss",   active: false, dropdown: null },
+    { label: "Explore",   active: false, dropdown: null, to: "/" },
+    { label: "Problems",  active: true,  dropdown: null, to: "/problems" },
+    { label: "Contest",   active: false, dropdown: null, to: "#" },
+    { label: "Discuss",   active: false, dropdown: null, to: "#" },
     {
       label: "Interview",
       active: false,
@@ -100,28 +100,44 @@ export default function NavbarWithAuth() {
       className="bg-[#1a1a1a] border-b border-[#2d2d2d] h-14 flex items-center px-4 md:px-6 gap-4 md:gap-6 sticky top-0 z-50"
     >
       {/* ── LOGO ─────────────────────────────────────────────────── */}
-      <div className="text-xl font-extrabold text-white tracking-tight">
+      <Link to="/" className="text-xl font-extrabold text-white tracking-tight hover:opacity-90 transition-opacity">
         Code<span className="text-[#ffa116]">Rep</span>
-      </div>
+      </Link>
 
       {/* ── NAV LINKS ────────────────────────────────────────────── */}
       <div className="flex-1 hidden md:flex items-center gap-1">
         {NAV_LINKS.map((link) => (
           <div key={link.label} className="relative">
-            <button
-              onClick={() => link.dropdown && toggleDropdown(link.label)}
-              className={[
-                "flex items-center gap-1 px-3 py-1.5 rounded-md text-sm transition-colors",
-                link.active
-                  ? "text-white font-bold"
-                  : link.orange
-                    ? "text-[#ffa116] hover:bg-[#2d2d2d]"
-                    : "text-gray-400 hover:text-white hover:bg-[#2d2d2d]",
-              ].join(" ")}
-            >
-              {link.label}
-              {link.dropdown && <ChevronDown />}
-            </button>
+            {link.to ? (
+              <Link
+                to={link.to}
+                className={[
+                  "flex items-center gap-1 px-3 py-1.5 rounded-md text-sm transition-colors",
+                  link.active
+                    ? "text-white font-bold"
+                    : link.orange
+                      ? "text-[#ffa116] hover:bg-[#2d2d2d]"
+                      : "text-gray-400 hover:text-white hover:bg-[#2d2d2d]",
+                ].join(" ")}
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <button
+                onClick={() => link.dropdown && toggleDropdown(link.label)}
+                className={[
+                  "flex items-center gap-1 px-3 py-1.5 rounded-md text-sm transition-colors",
+                  link.active
+                    ? "text-white font-bold"
+                    : link.orange
+                      ? "text-[#ffa116] hover:bg-[#2d2d2d]"
+                      : "text-gray-400 hover:text-white hover:bg-[#2d2d2d]",
+                ].join(" ")}
+              >
+                {link.label}
+                {link.dropdown && <ChevronDown />}
+              </button>
+            )}
 
             {/* Dropdown panel */}
             {link.dropdown && openDropdown === link.label && (
@@ -143,6 +159,12 @@ export default function NavbarWithAuth() {
 
       {/* ── RIGHT SIDE ───────────────────────────────────────────── */}
       <div className="flex items-center gap-4 ml-auto">
+        <Link 
+          to="/solved"
+          className="text-[#ffa116] hover:text-[#1a1a1a] text-sm font-semibold transition-colors border border-[#ffa116] px-4 py-1.5 rounded hover:bg-[#ffa116]"
+        >
+          Solved Problems
+        </Link>
         <button 
           onClick={logout}
           className="text-gray-400 hover:text-white text-sm font-semibold transition-colors border border-gray-600 px-4 py-1.5 rounded hover:border-[#ffa116] hover:text-[#ffa116]"
