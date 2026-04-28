@@ -11,11 +11,12 @@ export default function SolvedProblems() {
   useEffect(() => {
     const fetchSolvedProblems = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/submissions/solved", {
+        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const res = await fetch(`${API_URL}/api/submissions/solved`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
-        });
+        }); 
         const json = await res.json();
         if (res.ok) {
           setSolvedProblems(json.data || []);
@@ -44,7 +45,7 @@ export default function SolvedProblems() {
           
           {isLoading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="w-12 h-12 border-4 border-[#3a3a3a] border-t-[#ffa116] rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-[#3a3a3a] border-t-[#00b8a3] rounded-full animate-spin"></div>
             </div>
           ) : solvedProblems.length > 0 ? (
             <div className="bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl overflow-hidden shadow-2xl">
@@ -55,7 +56,7 @@ export default function SolvedProblems() {
                         to={`/problem/${slug}`} 
                         className="flex items-center gap-4 p-5 w-full"
                     >
-                        <div className="text-[#ffa116] bg-[#ffa116]/10 p-2 rounded-lg">
+                        <div className="text-[#00b8a3] bg-[#00b8a3]/10 p-2 rounded-lg">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
@@ -65,7 +66,7 @@ export default function SolvedProblems() {
                                 {slug.replace(/-/g, ' ')}
                             </span>
                         </div>
-                        <div className="text-gray-500 group-hover:text-[#ffa116] transition-colors">
+                        <div className="text-gray-500 group-hover:text-[#00b8a3] transition-colors">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M9 18l6-6-6-6" />
                             </svg>
@@ -86,7 +87,7 @@ export default function SolvedProblems() {
               </div>
               <p className="text-xl text-gray-300">No solved problems yet.</p>
               <p className="text-gray-500 mt-2">Start practicing to build your streak!</p>
-              <Link to="/problems" className="inline-block mt-6 px-6 py-2 bg-[#ffa116] text-[#1a1a1a] font-bold rounded-lg hover:bg-[#e08e13] transition-colors">
+              <Link to="/problems" className="inline-block mt-6 px-6 py-2 bg-[#00b8a3] text-[#1a1a1a] font-bold rounded-lg hover:bg-[#e08e13] transition-colors">
                 Explore Problems
               </Link>
             </div>

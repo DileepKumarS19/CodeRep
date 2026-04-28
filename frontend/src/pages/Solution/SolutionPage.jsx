@@ -9,8 +9,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 function SolutionPage() {
   const [problem, setProblem] = useState(null);
-  const slug = useParams();
-  console.log(slug);    
+  const slug = useParams();   
 
   useEffect(() => {
     const fetchProblem = async () => {

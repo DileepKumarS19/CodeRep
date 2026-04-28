@@ -56,11 +56,17 @@ function Ide({problem}) {
   const { name: slug } = useParams();
   const [language, setLanguage] = useState("java");
   const [code, setCode] = useState("");
-  const { token } = useAuth();
+  const { token, userId } = useAuth();
   
   // Console state
   const [showConsole, setShowConsole] = useState(false);
   const [executionResult, setExecutionResult] = useState(null);
+
+  useEffect(() => {
+    if (userId) {
+      socket.emit("join", userId);
+    }
+  }, [userId]);
 
   // Load code from local storage or fallback to starter code
   useEffect(() => {
@@ -161,11 +167,11 @@ function Ide({problem}) {
             </div>
           )}
 
-          {data.details && data.details.javaStdErr && (
+          {data.errorOutput && (
             <div className="flex flex-col gap-2 flex-1 min-h-[120px]">
                <span className="text-xs font-bold text-red-400 uppercase tracking-widest pl-1">Compile/Runtime Error</span>
                <div className="bg-red-950/20 text-red-400 rounded-lg p-4 font-mono text-sm whitespace-pre-wrap border border-red-900/30 overflow-auto shadow-inner">
-                 {stripAnsi(data.details.javaStdErr).trim()}
+                 {stripAnsi(data.errorOutput).trim()}
                </div>
             </div>
           )}
