@@ -18,7 +18,10 @@ import IORedis from "ioredis"
 import rateLimit from "express-rate-limit";
 
 // Connect to Redis and define the Queue
-const connection = new IORedis({ maxRetriesPerRequest: null });
+const redisOptions = { maxRetriesPerRequest: null, family: 4 };
+const connection = process.env.REDIS_URL 
+    ? new IORedis(process.env.REDIS_URL, redisOptions) 
+    : new IORedis(redisOptions);
 const executionQueue = new Queue("code-execution-queue", { connection });
 
 const app = express();
@@ -103,11 +106,12 @@ function authenticateToken(req, res, next) {
 }
 
 
-const executeLimit = rateLimit({ 
-  windowMs: 60 * 1000,  // 1 minute
-  max: 10,              // 10 submissions per minute per IP
-  message: { error: "Too many submissions. Slow down." }
+const executeLimit = rateLimit({
+    windowMs: 60 * 1000,  // 1 minute
+    max: 10,              // 10 submissions per minute per IP
+    message: { error: "Too many submissions. Slow down." }
 })
+
 async function startServer() {
     try {
         await mongoose.connect(process.env.MONGO_URL);

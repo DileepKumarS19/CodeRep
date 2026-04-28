@@ -2,7 +2,7 @@ import dns from 'node:dns/promises';
 dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 import { Worker } from "bullmq";
-import IORedis from "ioredis";
+import Redis from "ioredis";
 import { exec } from "child_process";
 import fs from "fs/promises";
 import path from "path";
@@ -22,7 +22,10 @@ async function connectToDb() {
 }
 connectToDb();
 
-const connection = new IORedis({ maxRetriesPerRequest: null });
+const redisOptions = { maxRetriesPerRequest: null, family: 4 };
+const connection = process.env.REDIS_URL
+    ? new Redis(process.env.REDIS_URL, redisOptions)
+    : new Redis(redisOptions);
 
 console.log("Worker is running and waiting for jobs...");
 const worker = new Worker("code-execution-queue", async (job) => {
