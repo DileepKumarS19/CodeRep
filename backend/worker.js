@@ -84,10 +84,12 @@ const worker = new Worker("code-execution-queue", async (job) => {
                         await SubmissionModel.create({
                             userId: job.data.userId,
                             problemSlug: job.data.slug,
-                            code: job.data.code,
                             language: "java",
-                            status: status
-                        });
+                            code: job.data.code,
+                            status: status,
+                            results: results,      // ← add this line
+                            action: job.data.action // ← add this line
+                        })
 
 
                         // --- NEW: CACHE INVALIDATION ---

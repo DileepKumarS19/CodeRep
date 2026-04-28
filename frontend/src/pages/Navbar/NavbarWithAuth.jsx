@@ -78,19 +78,6 @@ export default function NavbarWithAuth() {
   const NAV_LINKS = [
     { label: "Explore",   active: false, dropdown: null, to: "/" },
     { label: "Problems",  active: true,  dropdown: null, to: "/problems" },
-    { label: "Contest",   active: false, dropdown: null, to: "#" },
-    { label: "Discuss",   active: false, dropdown: null, to: "#" },
-    {
-      label: "Interview",
-      active: false,
-      dropdown: ["Mock Interview", "Interview Questions", "Assessment"],
-    },
-    {
-      label: "Store",
-      active: false,
-      orange: true,
-      dropdown: ["LeetCode Store", "Gift Cards"],
-    },
   ];
   
 
@@ -101,7 +88,7 @@ export default function NavbarWithAuth() {
     >
       {/* ── LOGO ─────────────────────────────────────────────────── */}
       <Link to="/" className="text-xl font-extrabold text-white tracking-tight hover:opacity-90 transition-opacity">
-        Code<span className="text-[#ffa116]">Rep</span>
+        Code<span className="text-[#00b8a3]">Rep</span>
       </Link>
 
       {/* ── NAV LINKS ────────────────────────────────────────────── */}
@@ -137,21 +124,6 @@ export default function NavbarWithAuth() {
                 {link.label}
                 {link.dropdown && <ChevronDown />}
               </button>
-            )}
-
-            {/* Dropdown panel */}
-            {link.dropdown && openDropdown === link.label && (
-              <div className="absolute top-full left-0 mt-1 bg-[#282828] border border-[#3a3a3a] rounded-lg shadow-2xl py-1 min-w-[180px] z-[60]">
-                {link.dropdown.map((item) => (
-                  <a
-                    key={item}
-                    href="#"
-                    className="block px-4 py-2.5 text-sm text-gray-300 hover:bg-[#333] hover:text-white transition-colors"
-                  >
-                    {item}
-                  </a>
-                ))}
-              </div>
             )}
           </div>
         ))}

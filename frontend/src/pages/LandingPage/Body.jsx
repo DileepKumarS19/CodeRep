@@ -1,12 +1,3 @@
-import {
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
-  Typography,
-  Avatar,
-  Tooltip,
-} from "@material-tailwind/react";
 export default function Body() {
   return (
     <div className="font-sans text-gray-300 bg-[#0a0a0a] overflow-x-hidden selection:bg-blue-500/30">
@@ -68,7 +59,7 @@ export default function Body() {
               to Learn
             </h1>
             <p className="text-gray-400 text-sm md:text-base leading-relaxed max-w-sm">
-              LeetCode is the best platform to help you enhance your skills,
+              CodeRep is the best platform to help you enhance your skills,
               expand your knowledge and prepare for technical interviews.
             </p>
             <button className="inline-flex items-center gap-2 border-2 border-[#00b8a3] text-[#00b8a3] hover:bg-[#00b8a3]/10 px-5 md:px-6 py-2 md:py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer">
@@ -100,7 +91,7 @@ export default function Body() {
             <p className="text-gray-400 text-sm md:text-base leading-relaxed max-w-sm">
               {" "}
               Explore is a well-organized tool that helps you get the most out
-              of LeetCode by providing structure to guide your progress
+              of CodeRep by providing structure to guide your progress
               towards the next step in your programming career.
             </p>
             <a
@@ -136,7 +127,7 @@ export default function Body() {
               Questions, Community &amp; Contests
             </h3>
             <p className="text-gray-400 text-sm leading-loose">
-              Over 1750 questions for you to practice. Come and join one of the
+              Over 100 questions for you to practice. Come and join one of the
               largest tech communities with hundreds of thousands of active
               users and participate in our contests to challenge yourself and
               earn rewards.

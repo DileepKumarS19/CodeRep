@@ -1,27 +1,43 @@
-import {Routes,Route, BrowserRouter} from 'react-router-dom';
-import LandingPage from './pages/LandingPage/LandingPage';
-import ProblemList from './pages/LandingPage/ProblemList';
-import Auth from './pages/LandingPage/Auth/Auth';
-import SolutionPage from './pages/Solution/SolutionPage';
-import SolvedProblems from './pages/SolvedProblems/SolvedProblems';
-import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './context/AuthContext';
+import { Routes, Route, BrowserRouter } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import ProtectedRoute from './components/ProtectedRoute'
+import { AuthProvider } from './context/AuthContext'
 
-function App(){
-    return (
-        <AuthProvider>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/" element={<LandingPage/>}/>
-                    <Route path="/signin" element={<Auth/>}/>
-                    <Route path="/signup" element={<Auth/>}/>
-                    <Route path="/problems" element={<ProtectedRoute><ProblemList/></ProtectedRoute>}/>
-                    <Route path="/problem/:name" element={<ProtectedRoute><SolutionPage/></ProtectedRoute>}/>
-                    <Route path="/solved" element={<ProtectedRoute><SolvedProblems/></ProtectedRoute>}/>
-                </Routes>
-            </BrowserRouter>
-        </AuthProvider>
-    )
+// ALL pages lazy loaded
+const LandingPage    = lazy(() => import('./pages/LandingPage/LandingPage'))
+const ProblemList    = lazy(() => import('./pages/LandingPage/ProblemList'))
+const Auth           = lazy(() => import('./pages/LandingPage/Auth/Auth'))
+const SolutionPage   = lazy(() => import('./pages/Solution/SolutionPage'))
+const SolvedProblems = lazy(() => import('./pages/SolvedProblems/SolvedProblems'))
+
+// one shared loader — shown during page transitions
+const PageLoader = () => (
+  <div className="h-screen bg-[#0a0a0a] flex items-center justify-center">
+    <div className="w-8 h-8 border-2 border-[#00b8a3] border-t-transparent rounded-full animate-spin" />
+  </div>
+)
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/"         element={<LandingPage />} />
+            <Route path="/signin"   element={<Auth />} />
+            <Route path="/signup"   element={<Auth />} />
+            <Route path="/problems" element={<ProtectedRoute><ProblemList /></ProtectedRoute>} />
+            <Route path="/solved"   element={<ProtectedRoute><SolvedProblems /></ProtectedRoute>} />
+            <Route path="/problem/:name" element={
+              <ProtectedRoute>
+                <SolutionPage />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </AuthProvider>
+  )
 }
 
-export default App;
+export default App

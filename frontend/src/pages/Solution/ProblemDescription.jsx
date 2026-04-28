@@ -1,10 +1,8 @@
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
-import { 
-  HandThumbUpIcon, 
-  HandThumbDownIcon, 
-  StarIcon, 
+import { marked } from "marked"
+import {
+  HandThumbUpIcon,
+  HandThumbDownIcon,
+  StarIcon,
   ChatBubbleBottomCenterTextIcon,
   TagIcon
 } from "@heroicons/react/24/outline";
@@ -49,7 +47,8 @@ function ProblemDescription({ problem }) {
 
   return (
     <div className="h-full bg-[#262626] text-gray-300 overflow-y-auto px-6 py-5 cs-scrollbar flex flex-col">
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .prose :where(code):not(:where([class~="not-prose"] *))::before { content: none; }
         .prose :where(code):not(:where([class~="not-prose"] *))::after { content: none; }
         
@@ -70,7 +69,7 @@ function ProblemDescription({ problem }) {
           background-color: #888;
         }
       `}} />
-      
+
       {/* Header Container */}
       <div className="mb-6 flex-shrink-0">
         <h1 className="text-[22px] font-semibold text-gray-100 mb-3 tracking-tight">
@@ -87,10 +86,10 @@ function ProblemDescription({ problem }) {
 
           {/* Topics Mocking if exists */}
           {problem.topics && problem.topics.length > 0 && (
-             <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full cursor-pointer hover:bg-white/10 transition-colors">
-               <TagIcon className="w-3.5 h-3.5 text-gray-400" />
-               <span className="text-xs text-gray-400 font-medium">Topics</span>
-             </div>
+            <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full cursor-pointer hover:bg-white/10 transition-colors">
+              <TagIcon className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-xs text-gray-400 font-medium">Topics</span>
+            </div>
           )}
 
           {/* Action Icons Panel */}
@@ -129,12 +128,10 @@ function ProblemDescription({ problem }) {
         prose-td:border prose-td:border-[#444] prose-td:px-4 prose-td:py-2
         prose-hr:border-[#444] prose-hr:my-8
       ">
-        <ReactMarkdown 
-            remarkPlugins={[remarkGfm]} 
-            rehypePlugins={[rehypeRaw]}
-        >
-          {problem.description}
-        </ReactMarkdown>
+        <div
+          className="prose prose-invert prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: marked(problem.description || "") }}
+        />
       </div>
 
       {/* Topics Expansion Area */}
@@ -148,7 +145,7 @@ function ProblemDescription({ problem }) {
               <span
                 key={index}
                 className="text-[13px] bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1.5 rounded-full cursor-pointer transition-colors border border-transparent hover:border-white/10 shadow-sm"
-               >
+              >
                 {topic}
               </span>
             ))}
