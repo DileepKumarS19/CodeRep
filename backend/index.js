@@ -37,7 +37,7 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: ["http://localhost:5173"],
+        origin: process.env.FRONTEND_URL || "http://localhost:5173",
         methods: ["GET", "POST"]
     }
 });
@@ -118,12 +118,11 @@ async function startServer() {
         console.log("MongoDB connected");
         const PORT = process.env.PORT || 3000;
 
-        // CHANGE app.listen to httpServer.listen
         httpServer.listen(PORT, () => {
             console.log(`Server & WebSockets are running on port ${PORT}`);
-        })
+        });
     } catch (err) {
-        console.log(err);
+        console.log("STARTUP ERROR:", err); // Added better error logging
     }
 }
 startServer();
