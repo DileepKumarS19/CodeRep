@@ -114,7 +114,10 @@ const executeLimit = rateLimit({
 
 async function startServer() {
     try {
-        await mongoose.connect(process.env.MONGO_URL);
+        await mongoose.connect(process.env.MONGO_URL, {
+            serverSelectionTimeoutMS: 60000,
+            socketTimeoutMS: 45000,
+        });
         console.log("MongoDB connected");
         const PORT = process.env.PORT || 3000;
 
